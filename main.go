@@ -81,7 +81,7 @@ func main() {
 	go systray.Run(onReady, onExit)
 
 	bot, err := reddit.NewBotFromAgentFile("agent.txt", 0)
-	if err != nil || true {
+	if err != nil {
 		dialog.Message("%s", "Did you put your agent.txt in the right location?").Title("Couldn't init Reddit API").Error()
 		panic(err)
 	}
