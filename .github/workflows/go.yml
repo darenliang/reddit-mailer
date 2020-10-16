@@ -63,20 +63,20 @@ jobs:
         path: ./windows/*
         if-no-files-found: error
 
-    - name: Build MacOS
-      env:
-        GOOS: darwin
-      run: |
-        mkdir -p macos/Contents
-        mkdir macos/Contents/MacOS
-        mkdir macos/Contents/Resources
-        cp info.plist macos/Contents
-        cp *.ico macos/Contents/Resources
-        go build -v -o macos/Contents/MacOS/reddit-mailer .
+    # - name: Build MacOS
+    #   env:
+    #     GOOS: darwin
+    #   run: |
+    #     mkdir -p macos/Contents
+    #     mkdir macos/Contents/MacOS
+    #     mkdir macos/Contents/Resources
+    #     cp info.plist macos/Contents
+    #     cp *.ico macos/Contents/Resources
+    #     go build -v -o macos/Contents/MacOS/reddit-mailer .
         
-    - name: Upload MacOS artifact
-      uses: actions/upload-artifact@v2.2.0
-      with:
-        name: reddit-mailer-macos
-        path: ./macos/*
-        if-no-files-found: error
+    # - name: Upload MacOS artifact
+    #   uses: actions/upload-artifact@v2.2.0
+    #   with:
+    #     name: reddit-mailer-macos
+    #     path: ./macos/*
+    #     if-no-files-found: error
