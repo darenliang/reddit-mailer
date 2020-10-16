@@ -26,39 +26,57 @@ jobs:
 
     - name: Get dependencies
       run: |
-        uname -a
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
         sudo apt-get install build-essential libgtk-3-dev libappindicator3-dev gir1.2-appindicator3-0.1
-        mkdir linux
-        cp *.ico linux
-        mkdir windows
-        cp *.ico windows
 
     - name: Build Linux
       env: 
         GOOS: linux
-      run: go build -v -o linux/reddit-mailer main.go
-      
-    - name: Build Windows
-      env: 
-        GOOS: windows
-      run: go build -v -o windows/reddit-mailer.exe .
-    
-    - name: Upload linux artifact
+      run: |
+        mkdir linux
+        cp *.ico linux 
+        go build -v -o linux/reddit-mailer main.go
+
+    - name: Upload Linux artifact
       uses: actions/upload-artifact@v2.2.0
       with:
         name: reddit-mailer-linux
         path: ./linux/*
         if-no-files-found: error
+      
+    - name: Build Windows
+      env: 
+        GOOS: windows
+      run: |
+        mkdir windows
+        cp *.ico windows
+        go build -v -o windows/reddit-mailer.exe .
         
-        
-    - name: Upload windows artifact
+    - name: Upload Windows artifact
       uses: actions/upload-artifact@v2.2.0
       with:
         name: reddit-mailer-windows
         path: ./windows/*
+        if-no-files-found: error
+
+    - name: Build MacOS
+      env:
+        GOOS: darwin
+      run: |
+        mkdir -p macos/Contents
+        mkdir macos/Contents/MacOS
+        mkdir macos/Contents/Resources
+        cp info.plist macos/Contents
+        cp *.ico macos/Contents/Resources
+        go build -v -o macos/Contents/MacOS/reddit-mailer .
+        
+    - name: Upload MacOS artifact
+      uses: actions/upload-artifact@v2.2.0
+      with:
+        name: reddit-mailer-macos
+        path: ./macos/*
         if-no-files-found: error
