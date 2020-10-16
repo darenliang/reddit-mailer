@@ -33,28 +33,32 @@ jobs:
             dep ensure
         fi
         sudo apt-get install build-essential libgtk-3-dev libappindicator3-dev gir1.2-appindicator3-0.1
+        mkdir linux
+        cp *.ico linux
+        mkdir windows
+        cp *.ico windows
 
     - name: Build Linux
       env: 
         GOOS: linux
-      run: go build -v -o reddit-mailer-linux main.go
+      run: go build -v -o linux/reddit-mailer main.go
       
     - name: Build Windows
       env: 
         GOOS: windows
-      run: go build -v -o reddit-mailer-windows .
+      run: go build -v -o windows/reddit-mailer.exe .
     
     - name: Upload linux artifact
       uses: actions/upload-artifact@v2.2.0
       with:
         name: reddit-mailer-linux
-        path: ./reddit-mailer-linux
+        path: ./linux/*
         if-no-files-found: error
         
         
     - name: Upload windows artifact
       uses: actions/upload-artifact@v2.2.0
       with:
-        name: reddit-mailer-windows
-        path: ./reddit-mailer-windows
+        name: reddit-mailer-windows.exe
+        path: ./windows/*
         if-no-files-found: error
