@@ -151,7 +151,7 @@ func onReady() {
 			} else {
 				systray.SetIcon(noMailIcon)
 				systray.SetTitle("")
-				systray.SetTooltip("")
+				systray.SetTooltip("No mail")
 			}
 		}
 	}
