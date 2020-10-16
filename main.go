@@ -37,7 +37,11 @@ func checkMail(bot reddit.Bot) error {
 
 	h, err := bot.ListingWithParams("/message/unread", map[string]string{"limit": "1"})
 
-	unreadCh <- len(h.Messages)
+	if len(h.Messages) > 0 {
+		unreadCh <- 1
+	} else {
+		unreadCh <- 0
+	}
 
 	if err != nil {
 		return err
@@ -113,7 +117,7 @@ func onReady() {
 		case <-quit.ClickedCh:
 			systray.Quit()
 		case c := <-unreadCh:
-			if c > 0 {
+			if c == 1 {
 				systray.SetIcon(mail)
 			} else {
 				systray.SetIcon(nomail)
