@@ -10,6 +10,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/getlantern/systray"
 	"github.com/pkg/browser"
+	"github.com/sqweek/dialog"
 	"github.com/turnage/graw/reddit"
 )
 
@@ -28,11 +29,13 @@ func init() {
 
 	mailIcon, err = readFile("mail.ico")
 	if err != nil {
+		dialog.Message("%s", "Couldn't load mail.ico").Title("Couldn't Load Icons").Error()
 		panic(err)
 	}
 
 	noMailIcon, err = readFile("nomail.ico")
 	if err != nil {
+		dialog.Message("%s", "Couldn't load nomail.ico").Title("Couldn't Load Icons").Error()
 		panic(err)
 	}
 
@@ -64,6 +67,11 @@ func checkMail(bot reddit.Bot) (int, error) {
 		return 0, err
 	}
 
+	if err != nil {
+		color.Red("Reddit API Error: Could not get mail")
+		return 0, err
+	}
+
 	return len(h.Messages), nil
 }
 
@@ -73,17 +81,17 @@ func main() {
 	go systray.Run(onReady, onExit)
 
 	bot, err := reddit.NewBotFromAgentFile("agent.txt", 0)
-	if err != nil {
+	if err != nil || true {
+		dialog.Message("%s", "Did you put your agent.txt in the right location?").Title("Couldn't init Reddit API").Error()
 		panic(err)
 	}
 
 	color.Green("Reddit API initialized")
 
 	mail, err := checkMail(bot)
-	if err != nil {
-		panic(err)
+	if err == nil {
+		mailCh <- mail
 	}
-	mailCh <- mail
 
 	timer := time.NewTicker(15 * time.Second)
 
@@ -91,10 +99,9 @@ func main() {
 		select {
 		case <-timer.C:
 			mail, err = checkMail(bot)
-			if err != nil {
-				panic(err)
+			if err == nil {
+				mailCh <- mail
 			}
-			mailCh <- mail
 		case <-exitCh:
 			timer.Stop()
 			return
