@@ -3,3 +3,5 @@
 agent.txt
 
 __debug_bin
+
+*.exe
