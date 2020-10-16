@@ -37,17 +37,12 @@ jobs:
     - name: Build Linux
       env: 
         GOOS: linux
-      run: go build -v main.go
-
-    - name: Build MacOS
-      env: 
-        GOOS: darwin
-      run: go build -v .
+      run: go build -v -o reddit-mailer-linux main.go
       
     - name: Build Windows
       env: 
         GOOS: windows
-      run: go build -v .
+      run: go build -v -o reddit-mailer-windows .
     
     - name: Testing
       run: ls -a
