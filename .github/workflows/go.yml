@@ -37,7 +37,7 @@ jobs:
     - name: Build Linux
       env: 
         GOOS: linux
-      run: go build -v -linkmode=internal .
+      run: go build -v main.go
 
     - name: Build MacOS
       env: 
