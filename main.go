@@ -52,6 +52,7 @@ func checkMail(bot reddit.Bot) error {
 }
 
 func main() {
+
 	var err error
 
 	color.Green("Startup")
