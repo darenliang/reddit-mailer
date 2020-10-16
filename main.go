@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/fatih/color"
@@ -10,10 +12,13 @@ import (
 	"github.com/turnage/graw/reddit"
 )
 
+const limit = 30
+
 var (
+	strLimit   string
 	noMailIcon []byte
 	mailIcon   []byte
-	mailCh     chan bool
+	mailCh     chan int
 	exitCh     chan bool
 )
 
@@ -32,8 +37,10 @@ func init() {
 
 	color.Green("Images loaded")
 
-	mailCh = make(chan bool)
+	mailCh = make(chan int)
 	exitCh = make(chan bool)
+
+	strLimit = strconv.Itoa(limit)
 }
 
 func readFile(name string) ([]byte, error) {
@@ -50,13 +57,13 @@ func readFile(name string) ([]byte, error) {
 	return data, nil
 }
 
-func checkMail(bot reddit.Bot) (bool, error) {
-	h, err := bot.ListingWithParams("/message/unread", map[string]string{"limit": "1"})
+func checkMail(bot reddit.Bot) (int, error) {
+	h, err := bot.ListingWithParams("/message/unread", map[string]string{"limit": strLimit})
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
-	return len(h.Messages) > 0, nil
+	return len(h.Messages), nil
 }
 
 func main() {
@@ -96,7 +103,7 @@ func main() {
 
 func onReady() {
 	systray.SetIcon(noMailIcon)
-	systray.SetTitle("Reddit Mailer")
+	systray.SetTooltip("No Mail")
 
 	quit := systray.AddMenuItem("Quit", "Stop Reddit Mailer")
 
@@ -106,11 +113,33 @@ func onReady() {
 		select {
 		case <-quit.ClickedCh:
 			systray.Quit()
-		case b := <-mailCh:
-			if b {
+		case c := <-mailCh:
+			if c > 0 {
 				systray.SetIcon(mailIcon)
+
+				var plural string
+				if c > 1 {
+					plural = "s"
+				} else {
+					plural = ""
+				}
+
+				var plus string
+				if c >= limit {
+					plus = "+"
+				} else {
+					plus = ""
+				}
+
+				title := fmt.Sprintf("%d%s Message%s", c, plus, plural)
+				systray.SetTitle(title)
+
+				tooltip := fmt.Sprintf("You have %d%s message%s", c, plus, plural)
+				systray.SetTooltip(tooltip)
 			} else {
 				systray.SetIcon(noMailIcon)
+				systray.SetTitle("")
+				systray.SetTooltip("")
 			}
 		}
 	}
