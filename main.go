@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/getlantern/systray"
+	"github.com/pkg/browser"
 	"github.com/turnage/graw/reddit"
 )
 
@@ -105,12 +106,16 @@ func onReady() {
 	systray.SetIcon(noMailIcon)
 	systray.SetTooltip("No Mail")
 
+	inbox := systray.AddMenuItem("Inbox", "Go to your inbox")
+
 	quit := systray.AddMenuItem("Quit", "Stop Reddit Mailer")
 
 	color.Green("Systray ready")
 
 	for {
 		select {
+		case <-inbox.ClickedCh:
+			browser.OpenURL("https://www.reddit.com/message/unread")
 		case <-quit.ClickedCh:
 			systray.Quit()
 		case c := <-mailCh:
