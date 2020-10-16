@@ -29,6 +29,7 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
+        sudo apt-get install build-essential libgtk-3-dev libappindicator3-dev gir1.2-appindicator3-0.1
 
     - name: Build Linux
       env: 
@@ -47,3 +48,6 @@ jobs:
         GOOS: windows
         GOARCH: amd64
       run: go build -v .
+    
+    - name: Testing
+      run: ls -a
