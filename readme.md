@@ -2,9 +2,13 @@
 
 Reddit Mailer is a small cross-platform program that sits neatly in your system-tray and checks your Reddit mail!
 
-![](https://raw.githubusercontent.com/George-lewis/reddit-mailer/master/screenshots/nomail.png)
+![](https://raw.githubusercontent.com/George-lewis/reddit-mailer/master/screenshots/nomail-windows.png)
 
-![](https://raw.githubusercontent.com/George-lewis/reddit-mailer/master/screenshots/mail.png)
+![](https://raw.githubusercontent.com/George-lewis/reddit-mailer/master/screenshots/mail-windows.png)
+
+![](https://raw.githubusercontent.com/George-lewis/reddit-mailer/master/screenshots/nomail-ubuntu.png)
+
+![](https://raw.githubusercontent.com/George-lewis/reddit-mailer/master/screenshots/mail-ubuntu.png)
 
 # Acquiring It
 
