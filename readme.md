@@ -10,7 +10,7 @@ Reddit Mailer is a small cross-platform program that sits neatly in your system-
 
 If you're on Windows or Linux go ahead and grab an artifact from the Github Actions tab then go to `Using It`.
 
-Or if want to build, run `go build .` on linux and run the batch file if you're on Windows.
+Or if want to build, run `go build -o reddit-mailer main.go` on linux and run the batch file if you're on Windows.
 
 If you're on MacOS the situation is more complicated, please read: https://github.com/getlantern/systray#macos
 
