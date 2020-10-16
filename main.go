@@ -10,10 +10,10 @@ import (
 	"github.com/turnage/graw/reddit"
 )
 
-var nomail []byte
-var mail []byte
+var nomailIcon []byte
+var mailIcon []byte
 
-var unreadCh chan int8
+var mailCh chan bool
 var exitCh chan int8
 
 func readFile(name string) ([]byte, error) {
@@ -33,21 +33,15 @@ func readFile(name string) ([]byte, error) {
 
 }
 
-func checkMail(bot reddit.Bot) error {
+func checkMail(bot reddit.Bot) (bool, error) {
 
 	h, err := bot.ListingWithParams("/message/unread", map[string]string{"limit": "1"})
 
-	if len(h.Messages) > 0 {
-		unreadCh <- 1
-	} else {
-		unreadCh <- 0
-	}
-
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return len(h.Messages) > 0, nil
 
 }
 
@@ -57,16 +51,16 @@ func main() {
 
 	color.Green("Startup")
 
-	unreadCh = make(chan int8)
+	mailCh = make(chan bool)
 	exitCh = make(chan int8)
 
-	mail, err = readFile("mail.ico")
+	mailIcon, err = readFile("mail.ico")
 
 	if err != nil {
 		panic(err)
 	}
 
-	nomail, err = readFile("nomail.ico")
+	nomailIcon, err = readFile("nomail.ico")
 
 	if err != nil {
 		panic(err)
@@ -86,17 +80,26 @@ func main() {
 
 	color.Green("Reddit API initialized")
 
-	checkMail(bot)
+	var mail bool
+
+	mail, err = checkMail(bot)
+
+	if err != nil {
+		panic(err)
+	}
+
+	mailCh <- mail
 
 	timer := time.NewTicker(15 * time.Second)
 
 	for {
 		select {
 		case <-timer.C:
-			err = checkMail(bot)
+			mail, err = checkMail(bot)
 			if err != nil {
 				panic(err)
 			}
+			mailCh <- mail
 		case <-exitCh:
 			return
 		}
@@ -106,7 +109,7 @@ func main() {
 
 func onReady() {
 
-	systray.SetIcon(nomail)
+	systray.SetIcon(nomailIcon)
 	systray.SetTitle("Reddit Mailer")
 
 	quit := systray.AddMenuItem("Quit", "Stop Reddit Mailer")
@@ -117,11 +120,11 @@ func onReady() {
 		select {
 		case <-quit.ClickedCh:
 			systray.Quit()
-		case c := <-unreadCh:
-			if c == 1 {
-				systray.SetIcon(mail)
+		case b := <-mailCh:
+			if b {
+				systray.SetIcon(mailIcon)
 			} else {
-				systray.SetIcon(nomail)
+				systray.SetIcon(nomailIcon)
 			}
 		}
 	}
