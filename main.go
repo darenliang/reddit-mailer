@@ -97,7 +97,7 @@ func main() {
 				panic(err)
 			}
 		case <-exitCh:
-			break
+			return
 		}
 	}
 
