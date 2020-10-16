@@ -44,5 +44,17 @@ jobs:
         GOOS: windows
       run: go build -v -o reddit-mailer-windows .
     
-    - name: Testing
-      run: ls -a
+    - name: Upload linux artifact
+      uses: actions/upload-artifact@v2.2.0
+      with:
+        name: reddit-mailer-linux
+        path: ./reddit-mailer-linux
+        if-no-files-found: error
+        
+        
+    - name: Upload windows artifact
+      uses: actions/upload-artifact@v2.2.0
+      with:
+        name: reddit-mailer-windows
+        path: ./reddit-mailer-windows
+        if-no-files-found: error
