@@ -71,12 +71,18 @@ func main() {
 
 	color.Green("Reddit API initialized")
 
+	mail, err := checkMail(bot)
+	if err != nil {
+		panic(err)
+	}
+	mailCh <- mail
+
 	timer := time.NewTicker(15 * time.Second)
 
 	for {
 		select {
 		case <-timer.C:
-			mail, err := checkMail(bot)
+			mail, err = checkMail(bot)
 			if err != nil {
 				panic(err)
 			}
