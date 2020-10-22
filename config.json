@@ -1,0 +1,8 @@
+{
+    "limit"        :   30,
+    "notifications":   true,
+    "comment_replies": true,
+    "messages":        true,
+    "post_replies":    true,
+    "mentions":        true
+}

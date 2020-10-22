@@ -1,64 +1,134 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strconv"
-	"time"
 
 	"github.com/fatih/color"
+	"github.com/george-lewis/beeep"
 	"github.com/getlantern/systray"
 	"github.com/pkg/browser"
 	"github.com/sqweek/dialog"
+	"github.com/turnage/graw"
 	"github.com/turnage/graw/reddit"
 )
 
-const limit = 30
+const configFilename = "config.json"
+
+type signal = struct{}
+
+type config = struct {
+	Limit          int  `json:"limit"`
+	Notifications  bool `json:"notification"`
+	CommentReplies bool `json:"comment_replies"`
+	Messages       bool `json:"messages"`
+	PostReplies    bool `json:"post_replies"`
+	Mentions       bool `json:"mentions"`
+}
 
 var (
 	strLimit   string
 	noMailIcon []byte
 	mailIcon   []byte
 	mailCh     chan int
-	exitCh     chan bool
+	notifyCh   chan signal
+	exitCh     [2]chan signal
+	_config    config
 )
+
+type mailer struct {
+	bot reddit.Bot
+}
+
+func (m *mailer) CommentReply(reply *reddit.Message) error {
+	title := fmt.Sprintf("/u/%s replied to you", reply.Author)
+	return processEvent(title, reply.Body, _config.CommentReplies)
+}
+
+func (m *mailer) Message(msg *reddit.Message) error {
+	title := fmt.Sprintf("/u/%s sent you a message", msg.Author)
+	return processEvent(title, msg.Body, _config.Messages)
+}
+
+func (m *mailer) PostReply(reply *reddit.Message) error {
+	title := fmt.Sprintf("/u/%s replied to your post", reply.Author)
+	return processEvent(title, reply.Body, _config.PostReplies)
+}
+
+func (m *mailer) Mention(mention *reddit.Message) error {
+	title := fmt.Sprintf("/u/%s mentioned you", mention.Author)
+	return processEvent(title, mention.Body, _config.Mentions)
+}
+
+func processEvent(title string, body string, notify bool) error {
+	notifyCh <- signal{}
+	if _config.Notifications && notify {
+		beeep.Notify(title, body, "mail.ico")
+	}
+	return nil
+}
+
+func readConfig(filename string) (config, error) {
+
+	var _config config
+
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return _config, err
+	}
+
+	err = json.Unmarshal(data, &_config)
+	if err != nil {
+		return _config, err
+	}
+
+	return _config, nil
+}
+
+// func saveConfig(filename string, _config config) error {
+// 	data, err := json.Marshal(_config)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return ioutil.WriteFile(filename, data, 0644)
+// }
 
 func init() {
 	var err error
 
-	mailIcon, err = readFile("mail.ico")
+	mailIcon, err = ioutil.ReadFile("mail.ico")
 	if err != nil {
-		dialog.Message("%s", "Couldn't load mail.ico").Title("Couldn't Load Icons").Error()
+		dialog.Message("Couldn't load mail.ico").Title("Couldn't Load Icons").Error()
 		panic(err)
 	}
 
-	noMailIcon, err = readFile("nomail.ico")
+	noMailIcon, err = ioutil.ReadFile("nomail.ico")
 	if err != nil {
-		dialog.Message("%s", "Couldn't load nomail.ico").Title("Couldn't Load Icons").Error()
+		dialog.Message("Couldn't load nomail.ico").Title("Couldn't Load Icons").Error()
 		panic(err)
 	}
 
 	color.Green("Images loaded")
 
+	_config, err = readConfig(configFilename)
+
+	if err != nil {
+		dialog.Message("Couldn't load config file %s", configFilename).Title("Couldn't load config").Error()
+		panic(err)
+	}
+
+	color.Green("Loaded config")
+
 	mailCh = make(chan int)
-	exitCh = make(chan bool)
+	notifyCh = make(chan signal)
+	exitCh[0] = make(chan signal)
+	exitCh[1] = make(chan signal)
 
-	strLimit = strconv.Itoa(limit)
-}
+	beeep.SetAppID("Reddit Inbox")
 
-func readFile(name string) ([]byte, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	strLimit = strconv.Itoa(_config.Limit)
 }
 
 func checkMail(bot reddit.Bot) (int, error) {
@@ -82,31 +152,48 @@ func main() {
 
 	bot, err := reddit.NewBotFromAgentFile("agent.txt", 0)
 	if err != nil {
-		dialog.Message("%s", "Did you put your agent.txt in the right location?").Title("Couldn't init Reddit API").Error()
+		dialog.Message("Did you put your agent.txt in the right location?").Title("Couldn't init Reddit API").Error()
 		panic(err)
 	}
 
-	color.Green("Reddit API initialized")
+	color.Green("Read agent file")
 
-	mail, err := checkMail(bot)
-	if err == nil {
-		mailCh <- mail
-	}
-
-	timer := time.NewTicker(15 * time.Second)
-
-	for {
-		select {
-		case <-timer.C:
-			mail, err = checkMail(bot)
-			if err == nil {
-				mailCh <- mail
+	go func() {
+		for {
+			select {
+			case <-notifyCh:
+				mail, err := checkMail(bot)
+				if err == nil {
+					mailCh <- mail
+				}
+			case <-exitCh[0]:
+				return
 			}
-		case <-exitCh:
-			timer.Stop()
-			return
 		}
+	}()
+
+	cfg := graw.Config{CommentReplies: true, Messages: true, Mentions: true}
+
+	handler := &mailer{bot: bot}
+
+	stop, _, err := graw.Run(handler, bot, cfg)
+
+	if err != nil {
+		color.Red("Failed to start graw run: ", err)
 	}
+
+	color.Green("Started Reddit event listeners")
+
+	<-exitCh[1]
+	stop()
+
+	// err = saveConfig(configFilename, _config)
+
+	// if err != nil {
+	// 	dialog.Message("Couldn't save config to %s", configFilename).Title("Couldn't save config").Error()
+	// 	panic(err)
+	// }
+
 }
 
 func onReady() {
@@ -137,7 +224,7 @@ func onReady() {
 				}
 
 				var plus string
-				if c >= limit {
+				if c >= _config.Limit {
 					plus = "+"
 				} else {
 					plus = ""
@@ -158,5 +245,6 @@ func onReady() {
 }
 
 func onExit() {
-	exitCh <- true
+	exitCh[0] <- signal{}
+	exitCh[1] <- signal{}
 }
