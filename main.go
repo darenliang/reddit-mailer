@@ -162,7 +162,6 @@ func main() {
 
 	go func() {
 		_checkMail := func() {
-			fmt.Println("check mail")
 			mail, err := checkMail(bot)
 			if err == nil {
 				mailCh <- mail
