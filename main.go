@@ -23,7 +23,7 @@ type signal = struct{}
 type config = struct {
 	Limit          int  `json:"limit"`
 	Interval       int  `json:"interval"`
-	Notifications  bool `json:"notification"`
+	Notifications  bool `json:"notifications"`
 	CommentReplies bool `json:"comment_replies"`
 	Messages       bool `json:"messages"`
 	PostReplies    bool `json:"post_replies"`
