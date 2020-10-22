@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/george-lewis/beeep"
@@ -21,6 +22,7 @@ type signal = struct{}
 
 type config = struct {
 	Limit          int  `json:"limit"`
+	Interval       int  `json:"interval"`
 	Notifications  bool `json:"notification"`
 	CommentReplies bool `json:"comment_replies"`
 	Messages       bool `json:"messages"`
@@ -159,13 +161,20 @@ func main() {
 	color.Green("Read agent file")
 
 	go func() {
+		_checkMail := func() {
+			fmt.Println("check mail")
+			mail, err := checkMail(bot)
+			if err == nil {
+				mailCh <- mail
+			}
+		}
+		sleepTime := time.Duration(_config.Interval) * time.Second
 		for {
 			select {
+			case <-time.After(sleepTime):
+				_checkMail()
 			case <-notifyCh:
-				mail, err := checkMail(bot)
-				if err == nil {
-					mailCh <- mail
-				}
+				_checkMail()
 			case <-exitCh[0]:
 				return
 			}

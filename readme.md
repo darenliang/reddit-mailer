@@ -32,6 +32,12 @@ Reddit Mailer comes with a configuration file `config.json`, this file must be p
 
 This value represents the number of unread mail retrieved by the application. If you ever have >= limit unread messages, the application won't count them and will display "limit+". e.g. if you have >=30 unread messages (the default limit) the systray will read: "30+ messages"
 
+> `interval; int`
+
+Check the inbox every `interval` seconds.
+
+Note: The application also checks the inbox when it receives an event from the API
+
 > `notifications; bool`
 
 This enables or disables notifications, takes precedence over toggles for specific types

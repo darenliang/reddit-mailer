@@ -1,5 +1,6 @@
 {
     "limit":           30,
+    "interval":        15,
     "notifications":   true,
     "comment_replies": true,
     "messages":        true,
