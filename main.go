@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strconv"
@@ -19,19 +18,7 @@ import (
 	"github.com/turnage/graw/reddit"
 )
 
-const configFilename = "config.json"
-
 type signal = struct{}
-
-type config = struct {
-	Limit          int  `json:"limit"`
-	Interval       int  `json:"interval"`
-	Notifications  bool `json:"notifications"`
-	CommentReplies bool `json:"comment_replies"`
-	Messages       bool `json:"messages"`
-	PostReplies    bool `json:"post_replies"`
-	Mentions       bool `json:"mentions"`
-}
 
 var (
 	strLimit   string
@@ -42,63 +29,6 @@ var (
 	exitCh     [2]chan signal
 	_config    config
 )
-
-type mailer struct {
-	bot reddit.Bot
-}
-
-func (m *mailer) CommentReply(reply *reddit.Message) error {
-	title := fmt.Sprintf("/u/%s replied to you", reply.Author)
-	return processEvent(title, reply.Body, _config.CommentReplies)
-}
-
-func (m *mailer) Message(msg *reddit.Message) error {
-	title := fmt.Sprintf("/u/%s sent you a message", msg.Author)
-	return processEvent(title, msg.Body, _config.Messages)
-}
-
-func (m *mailer) PostReply(reply *reddit.Message) error {
-	title := fmt.Sprintf("/u/%s replied to your post", reply.Author)
-	return processEvent(title, reply.Body, _config.PostReplies)
-}
-
-func (m *mailer) Mention(mention *reddit.Message) error {
-	title := fmt.Sprintf("/u/%s mentioned you", mention.Author)
-	return processEvent(title, mention.Body, _config.Mentions)
-}
-
-func processEvent(title string, body string, notify bool) error {
-	notifyCh <- signal{}
-	if _config.Notifications && notify {
-		beeep.Notify(title, body, "mail.ico")
-	}
-	return nil
-}
-
-func readConfig(filename string) (config, error) {
-
-	var _config config
-
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return _config, err
-	}
-
-	err = json.Unmarshal(data, &_config)
-	if err != nil {
-		return _config, err
-	}
-
-	return _config, nil
-}
-
-// func saveConfig(filename string, _config config) error {
-// 	data, err := json.Marshal(_config)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return ioutil.WriteFile(filename, data, 0644)
-// }
 
 func init() {
 	var err error
@@ -128,8 +58,10 @@ func init() {
 
 	mailCh = make(chan int)
 	notifyCh = make(chan signal)
-	exitCh[0] = make(chan signal)
-	exitCh[1] = make(chan signal)
+
+	for i := range exitCh {
+		exitCh[i] = make(chan signal)
+	}
 
 	beeep.SetAppID("Reddit Inbox")
 
@@ -253,6 +185,7 @@ func onReady() {
 }
 
 func onExit() {
-	exitCh[0] <- signal{}
-	exitCh[1] <- signal{}
+	for _, ch := range exitCh {
+		ch <- signal{}
+	}
 }
