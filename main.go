@@ -138,9 +138,6 @@ func init() {
 
 func checkMail(bot reddit.Bot) (int, error) {
 	h, err := bot.ListingWithParams("/message/unread", map[string]string{"limit": strLimit})
-	if err != nil {
-		return 0, err
-	}
 
 	if err != nil {
 		color.Red("Reddit API Error: Could not get mail")
