@@ -1,3 +1,6 @@
+//go:generate go get github.com/akavel/rsrc
+//go:generate rsrc -ico mail.ico
+
 package main
 
 import (
